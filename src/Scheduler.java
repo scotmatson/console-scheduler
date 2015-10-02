@@ -86,6 +86,12 @@ public class Scheduler
          fr = new FileReader(new File(EVENTS_FILE));
          br = new BufferedReader(fr);
          String line;
+         
+         // Because this implementation is fairly trivial we want to prevent duplicate
+         // data from being created. Clearing the map is the simplest way to go about
+         // this.
+         deleteAllEvents();
+         
          // File is stored as 3 line data blocks.
          while ((line = br.readLine()) != null)
          {
@@ -101,10 +107,13 @@ public class Scheduler
             
             this.addEvent(start, end, title);
          }
+         
+         System.out.printf("File has successfully been loaded.");
       }
       catch (FileNotFoundException fnfe)
       {
-         fnfe.printStackTrace();
+         //fnfe.printStackTrace();
+         System.out.printf("File does not exist.\n");
       }
       catch (IOException ioe)
       {
@@ -117,6 +126,10 @@ public class Scheduler
             fr.close();
             br.close();
          }
+         catch (NullPointerException npe)
+         {
+            System.out.printf("No data found.\n\n");
+         }
          catch (IOException ioe)
          {
             ioe.printStackTrace();
@@ -126,7 +139,6 @@ public class Scheduler
    
    /**
     * Schedules a new event.
-    * 
     * @param start date/time when the event starts.
     * @param end date/time when the event ends.
     * @param title name of the event.
@@ -370,22 +382,49 @@ public class Scheduler
       
       // Set counter for row wrapping.
       weekdayIndex = firstWeekday;
-      for (int i = 1; i <= lastDate; ++i, ++weekdayIndex)
+      for (int i = 1; i <= lastDate; ++i, ++weekdayIndex, cal.add(Calendar.DATE, 1))
       {
-         if (weekdayIndex % 7 == 0)
+         Date calendarDay = cal.getTime();
+         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+         try
          {
-            System.out.printf("%2d\n", i);
+            // Formatting for [KEY] comparison.
+            calendarDay = sdf.parse(sdf.format(calendarDay));
          }
-         else {
-            System.out.printf("%2d ", i);
+         catch (ParseException pe)
+         {
+            pe.printStackTrace();
+         }
+         
+         // Line spacing w/ event flag.
+         if (events.containsKey(calendarDay))
+         {
+            if (weekdayIndex % 7 == 0)
+            {
+               System.out.printf("[%2d]\n", i);
+            }
+            else {
+               System.out.printf("[%2d] ", i);
+            }
+         }
+         else
+         {
+            // Line spacing.
+            if (weekdayIndex % 7 == 0)
+            {
+               System.out.printf("%2d\n", i);
+            }
+            else 
+            {
+               System.out.printf("%2d ", i);
+            }
          }
       }
-      
       System.out.printf("\n");
    }
    
    /**
-    * 
+    * Prints the current day and all associated events.
     */
    private void printCalendarByDay()
    {
@@ -407,7 +446,7 @@ public class Scheduler
    }
    
    /**
-    *
+    *   Prints the calendar based upon the set view.
     */
    public void printCalendar()
    {
@@ -432,13 +471,17 @@ public class Scheduler
     */
    public void next()
    {
-      if (view == View.MONTH)
+      switch(view)
       {
-         calendar.add(Calendar.MONTH, 1);
-      }
-      else
-      {
-         calendar.add(Calendar.DATE, 1);
+         case MONTH:
+            calendar.add(Calendar.MONTH, 1);
+            break;
+         case DAY:
+            calendar.add(Calendar.DATE, 1);
+            break;
+         default:
+            System.out.printf("View mode not set, unable to display calendar.");
+            break;
       }
    }
    
@@ -449,13 +492,17 @@ public class Scheduler
     */
    public void previous()
    {
-      if (view == View.MONTH)
+      switch(view)
       {
-         calendar.add(Calendar.MONTH, -1);
-      }
-      else
-      {
-         calendar.add(Calendar.DATE, -1);
+         case MONTH:
+            calendar.add(Calendar.MONTH, -1);
+            break;
+         case DAY:
+            calendar.add(Calendar.DATE, -1);
+            break;
+         default:
+            System.out.printf("View mode not set, unable to display calendar.");
+            break;
       }
    }
    

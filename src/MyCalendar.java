@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
  */
 public class MyCalendar
 { 
+   
    boolean running = true;
    
    /**
@@ -38,7 +39,6 @@ public class MyCalendar
    /*
     * Displays main menu options
     * and prompts user to make a selection.
-    * 
     * @return selection result.
     */
    public void printMenu()
@@ -54,9 +54,13 @@ public class MyCalendar
             "[Q]uit");      
    }
    
-   public void processMainEvent(Scheduler p)
+   /**
+    * Performs actions on a scheduler object based upon
+    * character inputs.
+    * @param p a Scheduler object
+    */
+   public void processMainEvent(Scanner in, Scheduler p)
    {
-      Scanner in = new Scanner(System.in);
       char action = parseInput(in);
 
       switch (Character.toLowerCase(action))
@@ -81,14 +85,19 @@ public class MyCalendar
             break;
          case 'q':
             p.saveEvents();
-            in.close();
             running = false;
             break;
          default:
+            System.out.printf("Unable to process request.\n\n");
             break;
       }
    }
    
+   /**
+    * Deletes all events or events for a given day.
+    * @param in a Scanner to receive console input.
+    * @param p a Scheduler to carry out user requests.
+    */
    public void deleteEvent(Scanner in, Scheduler p)
    {
       System.out.printf("Which event(s) would you like to delete?\n");
@@ -119,6 +128,11 @@ public class MyCalendar
       }
    }
    
+   /**
+    * Prints all events for a given day.
+    * @param in a Scanner to receive console input.
+    * @param p a Scheduler to carry out user requests.
+    */
    public void goToEvent(Scanner in, Scheduler p)
    {
       System.out.printf("Enter a date to view in the format, MM/DD/YYYY\n");
@@ -141,6 +155,11 @@ public class MyCalendar
       p.goTo(c);
    }
    
+   /**
+    * Displays alternate views of the scheduler.
+    * @param in a Scanner to receive console input.
+    * @param p a Scheduler to carry out user requests.
+    */
    public void viewCalendar(Scanner in, Scheduler p)
    {
       System.out.printf("Please select a view format.\n");
@@ -178,6 +197,11 @@ public class MyCalendar
       p.setMonthView();
    }
    
+   /**
+    * Schedules new events.
+    * @param in a Scanner to receive console input.
+    * @param p a Scheduler to carry out user requests.
+    */
    public void scheduleEvent(Scanner in, Scheduler p)
    {
       // Event title.
@@ -226,16 +250,22 @@ public class MyCalendar
    /**
     * Parses console input and returns the first
     * character.
-    * 
-    * @return user input.
+    * @return user input as character value.
     */
    public char parseInput(Scanner in)
    {
-      char ch = 'x';
+      char ch = '\u0000';
       // Receive input.
       System.out.printf(">> ");
       // TODO Carriage return with empty data throws NullPointerException
-      ch = in.findInLine(".").charAt(0);
+      try
+      {
+         ch = in.findInLine(".").charAt(0);
+      }
+      catch (NullPointerException npe)
+      {
+         System.out.printf("Unknown input.");
+      }
       
       // Flush any additional input.
       in.nextLine();
@@ -247,10 +277,12 @@ public class MyCalendar
    }
    
    /**
-    *    
+    * Runs the application in a continues loop
+    * until a command to exit has been given.   
     */
    public void run()
    {    
+      Scanner in = new Scanner(System.in);
       // Defining calendar type and filename here so later
       // version would allow for user defined arguments.
       GregorianCalendar gc = new GregorianCalendar();
@@ -259,24 +291,25 @@ public class MyCalendar
       while (running) {   
          p.printCalendar();
          printMenu();
-         processMainEvent(p);
+         processMainEvent(in, p);
       }
       
-      exit();
+      exit(in);
    }
    
-   /*
+   /**
     * Exits the application.
     */
-   public void exit()
+   public void exit(Scanner in)
    {
+      in.close();
       System.out.println("Goodbye.");
       System.exit(0);
    }
    
    /**
-    * 
-    * @param args
+    * The main method.
+    * @param args user defined arguments from the command line.
     */
    public static void main(String[] args)
    {
