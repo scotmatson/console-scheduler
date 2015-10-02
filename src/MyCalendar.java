@@ -1,17 +1,27 @@
-/**
- * 
- */
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Scanner;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
+/**
+   COPYRIGHT (C) 2015 Scot Matson. All Rights Reserved.
+
+   Classes to interact with a Scheduler.
+
+   Solves CS151 homework assignment #2
+
+   @author Scot Matson
+
+   @version 1.00 2015/10/02
+ */
 public class MyCalendar
 { 
    boolean running = true;
    
+   /**
+    * Displays the application title screen.
+    */
    public void printHeader()
    {
       System.out.printf("%s\n", "###################################");
@@ -83,7 +93,6 @@ public class MyCalendar
    {
       System.out.printf("Which event(s) would you like to delete?\n");
       System.out.printf("[S]elected or [A]ll ?");
-      System.out.printf(">> ");
       
       switch(parseInput(in))
       {
@@ -115,6 +124,7 @@ public class MyCalendar
       System.out.printf("Enter a date to view in the format, MM/DD/YYYY\n");
       System.out.printf(">> ");
       String input = in.nextLine();
+      System.out.printf("\n");
       
       SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
       Calendar c = Calendar.getInstance();
@@ -163,6 +173,9 @@ public class MyCalendar
             p.next();
          }
       } while (action != 'm');
+      
+      // Reset to the default view mode.
+      p.setMonthView();
    }
    
    public void scheduleEvent(Scanner in, Scheduler p)
@@ -238,6 +251,8 @@ public class MyCalendar
     */
    public void run()
    {    
+      // Defining calendar type and filename here so later
+      // version would allow for user defined arguments.
       GregorianCalendar gc = new GregorianCalendar();
       Scheduler p = new Scheduler(gc, "events.txt");
       

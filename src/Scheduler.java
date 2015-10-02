@@ -17,11 +17,17 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.io.IOException;
 
-enum View 
-{
-   MONTH, DAY;
-}
+/**
+   COPYRIGHT (C) 2015 Scot Matson. All Rights Reserved.
 
+   Class to Simulate a Scheduler.
+
+   Solves CS151 homework assignment #2
+
+   @author Scot Matson
+
+   @version 1.00 2015/10/02
+ */
 public class Scheduler
 {  
    private final String EVENTS_FILE;
@@ -39,11 +45,10 @@ public class Scheduler
       this.EVENTS_FILE = "events.txt";
       this.view = View.MONTH;
       
-      // TreeList will keep Dates sorted for us.
+      // TreeMap will keep Dates sorted.
       this.events = new TreeMap<Date, List<Event>>();
       
       // Default calendar set for 'today'.
-      // TODO: This is currently being overridden elsewhere.
       this.calendar = calendar;
    }
    
@@ -56,6 +61,7 @@ public class Scheduler
    {
       this.EVENTS_FILE = filename;
       this.view = View.MONTH;
+      // TreeMap will keep Dates sorted.
       this.events = new TreeMap<>();      
       this.calendar = calendar;
    }
@@ -168,66 +174,96 @@ public class Scheduler
       }
    }
    
-   
+   /**
+    * Sets the calendar to a given date and displays
+    * the day along with events, if any.
+    * @param c Calendar object set with the go-to date.
+    */
    public void goTo(Calendar c)
    {
       this.calendar = c;
       this.printCalendarByDay();
    }
-   
-   // TODO Year needs to act as a header
-   // TODO Each event for that year should be listed
-   // TODO Maybe make a list all events method
-   // and a separate list events method to simply list the events for the set
-   // date while in view mode:day
+
+   /**
+    * Lists all scheduled events.
+    */
    public void listAllEvents()
    {
-      Iterator<Map.Entry<Date, List<Event>>> it = events.entrySet().iterator();
-      while (it.hasNext())
+      if (events.isEmpty())
       {
-         Map.Entry<Date, List<Event>> pair = (Map.Entry<Date, List<Event>>) it.next();
-         for (Event e : pair.getValue())
+         System.out.printf("There are currently no events scheduled.\n");
+      }
+      else 
+      {
+         Iterator<Map.Entry<Date, List<Event>>> it = events.entrySet().iterator();
+         int yearHeader = -1;
+         while (it.hasNext())
          {
-            printEvent(e);
+            Map.Entry<Date, List<Event>> pair = (Map.Entry<Date, List<Event>>) it.next();
+            
+            // Prints a YEAR header for each list of Calendar Events.
+            Calendar keyYear = Calendar.getInstance();
+            keyYear.setTime(pair.getKey());
+            if (yearHeader != keyYear.get(Calendar.YEAR))
+            {
+               yearHeader = keyYear.get(Calendar.YEAR);
+               System.out.printf("%d\n", yearHeader);
+            }
+            
+            for (Event e : pair.getValue())
+            {
+               SimpleDateFormat sdf = new SimpleDateFormat("EEEE MMM dd");
+               String date = sdf.format(e.getStart().getTime());
+               
+               sdf.applyPattern("HH:mm");
+               String start = sdf.format(e.getStart().getTime());
+               String end = sdf.format(e.getEnd().getTime());
+               System.out.printf("  %s %s - %s %s\n", date, start, end, e.getTitle());
+            }
          }
       }
       System.out.printf("\n");
    }
    
+   /**
+    * Lists all events for the given date.
+    * @param date the set date.
+    */
    public void listDayEvents(Date date)
    {
+      SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+      try
+      {
+         // Ensure Date object is in the proper format to
+         // compare against the map [KEY].
+         date = sdf.parse(sdf.format(date));
+      }
+      catch (ParseException pe)
+      {
+         pe.printStackTrace();
+      }
+      
+      sdf.applyPattern("HH:mm");
       if (events.containsKey(date))
       {
          List<Event> eventList = events.get(date);
          for (Event e : eventList)
          {
-            printEvent(e);
+            String start = sdf.format(e.getStart().getTime());
+            String end = sdf.format(e.getEnd().getTime());
+            System.out.printf("%s %s - %s\n", e.getTitle(), start, end);
          }
          System.out.printf("\n");
+      }
+      else
+      {
+         System.out.printf("  No events scheduled for today.\n\n");
       }
    }
    
    /**
-    * 
-    * @param e
-    */
-   public void printEvent(Event e)
-   {
-      SimpleDateFormat sdf = new SimpleDateFormat();
-      sdf.applyPattern("EEEE, MMM dd, yyyy");
-      // Since events do not span multiple days, we can get away with simply
-      // using getStartDate() only at this time.
-      String date = sdf.format(e.getStart().getTime());
-
-      sdf.applyPattern("HH:mm");
-      String start = sdf.format(e.getStart().getTime());
-      String end = sdf.format(e.getEnd().getTime());
-      
-      System.out.printf("%s %s - %s %s\n", date, start, end, e.getTitle());
-   }
-   
-   /**
-    * 
+    * Deletes all scheduled events.
     */
    public void deleteAllEvents()
    {
@@ -235,8 +271,8 @@ public class Scheduler
    }
    
    /**
-    * 
-    * @param d
+    * Deletes all scheduled events for a given date.
+    * @param d event date to delete.
     */
    public void deleteDayEvents(Date d)
    {
@@ -244,14 +280,17 @@ public class Scheduler
       {
          events.remove(d);
       }
+      else
+      {
+         System.out.printf("No events scheduled for that date.\n\n");
+      }
    }
 
    /**
-    * 
+    * Saves all events to a text file.
     */
    public void saveEvents()
    {
-      // Write events to events.txt
       FileWriter fw = null;
       try
       {
@@ -298,21 +337,21 @@ public class Scheduler
     * Prints the calendar month but does not yet take into account EVENTS!!!
     */
    private void printCalendarByMonth()
-   {
-      // Should be using a tmp value, currently modifies the original
-      // Calendar.
+   {  
+      // Clone the stored calendar to generate the calendar output,
+      // this will help maintain state of the stored calendar object.
+      Calendar cal = Calendar.getInstance();
+      cal.setTime(calendar.getTime());
       
-      // Set the calendar to the first day of the month we can get the first day of the month.
-      calendar.set(Calendar.DATE, calendar.getActualMinimum(Calendar.DATE));
-      
-      // Store the last day of the current month.
-      int lastDate = calendar.getActualMaximum(Calendar.DATE);
+      // Set the bounds for the current month.
+      cal.set(Calendar.DATE, calendar.getActualMinimum(Calendar.DATE));
+      int lastDate = cal.getActualMaximum(Calendar.DATE);
             
-      // Store month/year
-      // Locale.getDefault() returns the locale for the Java environment,
-      // not the system environment. Ideally we would want the system locale.
-      String month = calendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault());
-      int year = calendar.get(Calendar.YEAR);
+      // Store the month and year for the header.
+      // * Locale.getDefault() returns the locale for the Java environment,
+      //   not the system environment. Ideally we would want the system locale.
+      String month = cal.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault());
+      int year = cal.get(Calendar.YEAR);
       
       // Print calendar header.
       System.out.printf(" %s %s\n", month, year);
@@ -320,8 +359,8 @@ public class Scheduler
       
       // Sunday(1) - Saturday(7)
       int weekdayIndex;
-      // First weekday of the month
-      int firstWeekday = calendar.get(Calendar.DAY_OF_WEEK);
+      // Get the day of the week that the month starts on.
+      int firstWeekday = cal.get(Calendar.DAY_OF_WEEK);
       
       // Buffer first weekday of the month
       for (weekdayIndex = 1; weekdayIndex < firstWeekday; ++weekdayIndex)
@@ -333,7 +372,6 @@ public class Scheduler
       weekdayIndex = firstWeekday;
       for (int i = 1; i <= lastDate; ++i, ++weekdayIndex)
       {
-         // May be able to wrap dates here for event days.
          if (weekdayIndex % 7 == 0)
          {
             System.out.printf("%2d\n", i);
@@ -342,7 +380,8 @@ public class Scheduler
             System.out.printf("%2d ", i);
          }
       }
-      System.out.printf("\n\n");
+      
+      System.out.printf("\n");
    }
    
    /**
@@ -372,13 +411,17 @@ public class Scheduler
     */
    public void printCalendar()
    {
-      if (view == View.MONTH)
+      switch (view)
       {
-         this.printCalendarByMonth();
-      }
-      else 
-      {
-         this.printCalendarByDay();
+         case MONTH:
+            this.printCalendarByMonth();
+            break;
+         case DAY:
+            this.printCalendarByDay();
+            break;
+         default:
+            System.out.printf("View mode not set, unable to display calendar.");
+            break;
       }
    }
    
@@ -391,11 +434,11 @@ public class Scheduler
    {
       if (view == View.MONTH)
       {
-         this.nextMonth();
+         calendar.add(Calendar.MONTH, 1);
       }
       else
       {
-         this.nextDay();
+         calendar.add(Calendar.DATE, 1);
       }
    }
    
@@ -408,16 +451,16 @@ public class Scheduler
    {
       if (view == View.MONTH)
       {
-         this.previousMonth();
+         calendar.add(Calendar.MONTH, -1);
       }
       else
       {
-         this.previousDay();
+         calendar.add(Calendar.DATE, -1);
       }
    }
    
    /**
-    * 
+    * Sets the calendar view-mode to month.
     */
    public void setMonthView()
    {
@@ -425,40 +468,19 @@ public class Scheduler
    }
    
    /**
-    * 
+    * Sets calendar view-mode to day.
     */
    public void setDayView()
    {
       view = View.DAY;
    }
-   
-   /**
-    * 
-    */
-   public void nextMonth() {
-      calendar.add(Calendar.MONTH, 1);
-   }
-   
-   /**
-    * 
-    */
-   public void previousMonth() {
-      calendar.add(Calendar.MONTH, -1);
-   }
-   
-   /**
-    * 
-    */
-   public void nextDay()
-   {
-      calendar.add(Calendar.DATE, 1);
-   }
-   
-   /**
-    * 
-    */
-   public void previousDay()
-   {
-      calendar.add(Calendar.DATE, -1);
-   }
+}
+
+/**
+ * Predefined view settings which determine how
+ * the calendar is presented
+ */
+enum View
+{
+   MONTH, DAY
 }
