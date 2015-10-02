@@ -64,10 +64,10 @@ public class MyCalendar
             goToEvent(in, p);
             break;
          case 'e':
-            p.listEvents();
+            p.listAllEvents();
             break;
          case 'd':
-            p.deleteEvent();
+            deleteEvent(in, p);
             break;
          case 'q':
             p.saveEvents();
@@ -75,6 +75,37 @@ public class MyCalendar
             running = false;
             break;
          default:
+            break;
+      }
+   }
+   
+   public void deleteEvent(Scanner in, Scheduler p)
+   {
+      System.out.printf("Which event(s) would you like to delete?\n");
+      System.out.printf("[S]elected or [A]ll ?");
+      System.out.printf(">> ");
+      
+      switch(parseInput(in))
+      {
+         case 's':
+            System.out.printf("Enter the date to delete formatted MM/DD/YYYY.\n");
+            System.out.printf(">> ");
+            String input = in.nextLine();
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+            try
+            {
+               p.deleteDayEvents(sdf.parse(input));
+            }
+            catch (ParseException pe)
+            {
+               pe.printStackTrace();
+            }
+            break;
+         case 'a':
+            p.deleteAllEvents();
+            break;
+         default:
+            System.out.printf("Unknown Input.");
             break;
       }
    }

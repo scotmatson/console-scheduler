@@ -10,7 +10,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -28,11 +27,11 @@ public class Scheduler
    private final String EVENTS_FILE;
    Calendar calendar;
    private View view;
-//   private List<Event> events;
    private Map<Date, List<Event>> events;
 
    /**
-    * Constructor Method.
+    * Constructor method,
+    * Provides a default filename.
     * @param calendar a Calendar object.
     */
    public Scheduler(Calendar calendar)
@@ -57,7 +56,7 @@ public class Scheduler
    {
       this.EVENTS_FILE = filename;
       this.view = View.MONTH;
-      this.events = new HashMap<>();      
+      this.events = new TreeMap<>();      
       this.calendar = calendar;
    }
    
@@ -172,7 +171,6 @@ public class Scheduler
    
    public void goTo(Calendar c)
    {
-      this.setDayView();
       this.calendar = c;
       this.printCalendarByDay();
    }
@@ -182,38 +180,75 @@ public class Scheduler
    // TODO Maybe make a list all events method
    // and a separate list events method to simply list the events for the set
    // date while in view mode:day
-   public void listEvents()
+   public void listAllEvents()
    {
-      SimpleDateFormat sdf = new SimpleDateFormat();
       Iterator<Map.Entry<Date, List<Event>>> it = events.entrySet().iterator();
       while (it.hasNext())
       {
          Map.Entry<Date, List<Event>> pair = (Map.Entry<Date, List<Event>>) it.next();
          for (Event e : pair.getValue())
          {
-            sdf.applyPattern("EEEE, MMM dd, yyyy");
-            // Since events do not span multiple days, we can get away with simply
-            // using getStartDate() only at this time.
-            String date = sdf.format(e.getStart().getTime());
-   
-            sdf.applyPattern("HH:mm");
-            String start = sdf.format(e.getStart().getTime());
-            String end = sdf.format(e.getEnd().getTime());
-            
-            System.out.printf("%s %s - %s %s\n", date, start, end, e.getTitle());
+            printEvent(e);
          }
       }
       System.out.printf("\n");
    }
    
-   
-   public void deleteEvent()
+   public void listDayEvents(Date date)
    {
+      if (events.containsKey(date))
+      {
+         List<Event> eventList = events.get(date);
+         for (Event e : eventList)
+         {
+            printEvent(e);
+         }
+         System.out.printf("\n");
+      }
+   }
+   
+   /**
+    * 
+    * @param e
+    */
+   public void printEvent(Event e)
+   {
+      SimpleDateFormat sdf = new SimpleDateFormat();
+      sdf.applyPattern("EEEE, MMM dd, yyyy");
+      // Since events do not span multiple days, we can get away with simply
+      // using getStartDate() only at this time.
+      String date = sdf.format(e.getStart().getTime());
+
+      sdf.applyPattern("HH:mm");
+      String start = sdf.format(e.getStart().getTime());
+      String end = sdf.format(e.getEnd().getTime());
       
+      System.out.printf("%s %s - %s %s\n", date, start, end, e.getTitle());
+   }
+   
+   /**
+    * 
+    */
+   public void deleteAllEvents()
+   {
+      events.clear();
+   }
+   
+   /**
+    * 
+    * @param d
+    */
+   public void deleteDayEvents(Date d)
+   {
+      if (events.containsKey(d))
+      {
+         events.remove(d);
+      }
    }
 
-   // TODO On quit this will be called.
-   // Should order matter here?
+   /**
+    * 
+    */
    public void saveEvents()
    {
       // Write events to events.txt
@@ -328,12 +363,12 @@ public class Scheduler
       int year = calendar.get(Calendar.YEAR);
 
       // Print Day, Month, Year format
-      System.out.printf("%s, %s %d, %d\n\n", daysOfTheWeek[day-1], month, date, year);
-      // Print all events.
+      System.out.printf("%s, %s %d, %d\n", daysOfTheWeek[day-1], month, date, year);
+      listDayEvents(calendar.getTime());
    }
    
    /**
-    * 
+    *
     */
    public void printCalendar()
    {
@@ -426,13 +461,4 @@ public class Scheduler
    {
       calendar.add(Calendar.DATE, -1);
    }
-   
-//   class CalendarComparator implements Comparator<Calendar>
-//   {
-//      @Override
-//      public int compare(Calendar a, Calendar b)
-//      {
-//         return a. 
-//      }
-//   }
 }
